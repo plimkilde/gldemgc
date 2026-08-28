@@ -1,0 +1,33 @@
+[project]
+authors = [{name = "Peter Limkilde Svendsen", email = "pelis@kds.dk"}]
+dependencies = []
+name = "gldemgc"
+requires-python = ">= 3.11"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64"]
+
+[tool.pixi.pypi-dependencies]
+gldemgc = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+numpy = ">=2.5.2,<3"
+gdal = ">=3.13.3,<4"
+libgdal-pg = ">=3.13.3,<4"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+
+[tool.pixi.feature.test.dependencies]
+ruff = ">=0.16.5,<0.17"
+mypy = ">=2.3.1,<3"
+pytest = ">=9.1.1,<10"
