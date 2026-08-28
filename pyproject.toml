@@ -17,3 +17,8 @@ platforms = ["win-64", "linux-64"]
 gldemgc = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+numpy = ">=2.5.2,<3"
+gdal = ">=3.13.3,<4"
+libgdal-pg = ">=3.13.3,<4"
