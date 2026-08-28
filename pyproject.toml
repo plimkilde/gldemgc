@@ -22,3 +22,12 @@ gldemgc = { path = ".", editable = true }
 numpy = ">=2.5.2,<3"
 gdal = ">=3.13.3,<4"
 libgdal-pg = ">=3.13.3,<4"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+
+[tool.pixi.feature.test.dependencies]
+ruff = ">=0.16.5,<0.17"
+mypy = ">=2.3.1,<3"
+pytest = ">=9.1.1,<10"
