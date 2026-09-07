@@ -9,6 +9,9 @@ version = "0.1.0"
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[project.scripts]
+gcpcheck = "gldemgc.gcpcheck:main"
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["win-64", "linux-64"]
@@ -17,6 +20,7 @@ platforms = ["win-64", "linux-64"]
 gldemgc = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+gcpcheck = "gcpcheck"
 
 [tool.pixi.dependencies]
 numpy = ">=2.5.2,<3"
