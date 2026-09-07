@@ -12,7 +12,9 @@ raster and a collection of ground control points (GCPs). It outputs a
 GeoPackage (GPKG) file containing results for each GCP.
 
 ```
-usage: pixi run gcpcheck [-h] [--gcp-z-field GCP_Z_FIELD] [--progress]
+usage: pixi run gcpcheck [-h] [--gcp-z-field GCP_Z_FIELD]
+                         [--gcp-attribute-filter GCP_ATTRIBUTE_FILTER]
+                         [--progress]
                          [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
                          dem gcps output
 
@@ -25,10 +27,16 @@ options:
   -h, --help            show this help message and exit
   --gcp-z-field GCP_Z_FIELD
                         name of Z field in GCP features
+  --gcp-attribute-filter GCP_ATTRIBUTE_FILTER
+                        SQL WHERE-style attribute filter for GCPs
   --progress            show progress bar during processing
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         logging level
 ```
+
+Note that `--gcp-attribute-filter` arguments may need careful escaping. For
+example, to apply `source = "foo"` on Windows CMD, use
+`--gcp-attribute-filter "source = \"foo\""`.
 
 The output file will contain 2D points in the same SRS as the GCP input. Each
 point will have the following fields:
