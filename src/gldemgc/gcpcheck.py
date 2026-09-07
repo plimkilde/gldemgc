@@ -37,9 +37,12 @@ class Dem:
         return z
 
 class Gcps:
-    def __init__(self, path: Path, z_field_name=None):
+    def __init__(self, path: Path, attribute_filter=None, z_field_name=None):
         logging.info(f'Opening GCP dataset {path}...')
         self.dataset = ogr.Open(path, gdal.GA_ReadOnly)
+        self.layer = self.dataset.GetLayer()
+        self.layer.SetAttributeFilter(attribute_filter)
+        logging.debug(f"Using GCP attribute filter '{attribute_filter}'")
         self.z_field_name = z_field_name
         if self.z_field_name is None:
             logging.debug('GCP Z field name is None, will use geometry Z')
@@ -47,10 +50,8 @@ class Gcps:
             logging.debug(f'Using field name "{self.z_field_name}" for GCP Z values')
 
     def get_points(self):
-        layer = self.dataset.GetLayer()
-
         points_list = []
-        for feature in layer:
+        for feature in self.layer:
             geometry_ref = feature.GetGeometryRef()
 
             x = geometry_ref.GetX()
@@ -104,6 +105,7 @@ def parse_args(args):
     parser.add_argument('output', type=str, help='desired path to output (GPKG)')
     # parser.add_argument('--geoid', type=str, help='path to geoid') # TODO
     parser.add_argument('--gcp-z-field', type=str, help='name of Z field in GCP features')
+    parser.add_argument('--gcp-attribute-filter', type=str, help='SQL WHERE-style attribute filter for GCPs')
     parser.add_argument('--progress', action='store_true', help='show progress bar during processing')
     parser.add_argument('--log-level', type=str, choices=LOG_LEVELS.keys(), default='WARNING', help='logging level')
     parsed_args = parser.parse_args(args)
@@ -120,9 +122,10 @@ def main():
     # if input_args.geoid is not None:
     #     geoid_path = Path(input_args.geoid)
     gcp_z_field_name = input_args.gcp_z_field
+    gcp_attribute_filter = input_args.gcp_attribute_filter
 
     dem = Dem(dem_path)
-    gcps = Gcps(gcps_path, gcp_z_field_name)
+    gcps = Gcps(gcps_path, attribute_filter=gcp_attribute_filter, z_field_name=gcp_z_field_name)
     output_points = OutputPoints(output_path, 'gcp_results', gcps.get_srs())
 
     gcp_points = gcps.get_points()
