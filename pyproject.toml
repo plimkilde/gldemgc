@@ -26,6 +26,7 @@ gcpcheck = "gcpcheck"
 numpy = ">=2.5.2,<3"
 gdal = ">=3.13.3,<4"
 libgdal-pg = ">=3.13.3,<4"
+tqdm = ">=4.70.0,<5"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }

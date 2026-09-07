@@ -12,7 +12,7 @@ raster and a collection of ground control points (GCPs). It outputs a
 GeoPackage (GPKG) file containing results for each GCP.
 
 ```
-usage: pixi run gcpcheck [-h] [--gcp-z-field GCP_Z_FIELD]
+usage: pixi run gcpcheck [-h] [--gcp-z-field GCP_Z_FIELD] [--progress]
                          [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
                          dem gcps output
 
@@ -25,6 +25,7 @@ options:
   -h, --help            show this help message and exit
   --gcp-z-field GCP_Z_FIELD
                         name of Z field in GCP features
+  --progress            show progress bar during processing
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         logging level
 ```

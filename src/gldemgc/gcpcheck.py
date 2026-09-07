@@ -5,6 +5,7 @@ import numpy as np
 from osgeo import gdal, ogr, osr
 from pathlib import Path
 import sys
+from tqdm import tqdm
 
 gdal.UseExceptions()
 ogr.UseExceptions()
@@ -103,6 +104,7 @@ def parse_args(args):
     parser.add_argument('output', type=str, help='desired path to output (GPKG)')
     # parser.add_argument('--geoid', type=str, help='path to geoid') # TODO
     parser.add_argument('--gcp-z-field', type=str, help='name of Z field in GCP features')
+    parser.add_argument('--progress', action='store_true', help='show progress bar during processing')
     parser.add_argument('--log-level', type=str, choices=LOG_LEVELS.keys(), default='WARNING', help='logging level')
     parsed_args = parser.parse_args(args)
     return parsed_args
@@ -124,7 +126,12 @@ def main():
     output_points = OutputPoints(output_path, 'gcp_results', gcps.get_srs())
 
     gcp_points = gcps.get_points()
-    for gcp_point in gcp_points:
+
+    gcp_iterator = gcp_points
+    if input_args.progress:
+        gcp_iterator = tqdm(gcp_iterator, unit='GCP', ascii=True)
+
+    for gcp_point in gcp_iterator:
         (x, y, gcp_z) = gcp_point
         dem_z = dem.get_z(x, y, gcps.get_srs())
         z_diff = dem_z - gcp_z
