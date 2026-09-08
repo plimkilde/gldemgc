@@ -20,6 +20,7 @@ LOG_LEVELS = OrderedDict([
 ])
 
 DEM_Z_FIELD_NAME = 'dem_z'
+GEOID_Z_FIELD_NAME = 'geoid_z'
 GCP_Z_FIELD_NAME = 'gcp_z'
 Z_DIFF_FIELD_NAME = 'z_diff'
 
@@ -30,10 +31,19 @@ class Dem:
 
     def get_z(self, x, y, srs=None):
         band = self.dataset.GetRasterBand(1)
-
         # If srs is None, will use the dataset's native srs
         z = band.InterpolateAtGeolocation(x, y, srs, gdal.GRIORA_Bilinear)
+        return z
 
+class Geoid:
+    def __init__(self, path: Path):
+        logging.info(f'Opening geoid dataset {path}...')
+        self.dataset = gdal.Open(path, gdal.GA_ReadOnly)
+
+    def get_z(self, x, y, srs=None):
+        band = self.dataset.GetRasterBand(1)
+        # If srs is None, will use the dataset's native srs
+        z = band.InterpolateAtGeolocation(x, y, srs, gdal.GRIORA_Bilinear)
         return z
 
 class Gcps:
@@ -73,7 +83,7 @@ class Gcps:
     def get_srs(self):
         return self.dataset.GetSpatialRef()
 
-GcpResult = namedtuple('GcpResult', ['x', 'y', 'dem_z', 'gcp_z', 'z_diff'])
+GcpResult = namedtuple('GcpResult', ['x', 'y', 'dem_z', 'geoid_z', 'gcp_z', 'z_diff'])
 
 class OutputPoints:
     def __init__(self, path: Path, layer_name, srs):
@@ -84,16 +94,17 @@ class OutputPoints:
 
         self.layer = self.dataset.CreateLayer(layer_name, srs, self.geometry_type)
         self.layer.CreateField(ogr.FieldDefn(DEM_Z_FIELD_NAME, ogr.OFTReal))
+        self.layer.CreateField(ogr.FieldDefn(GEOID_Z_FIELD_NAME, ogr.OFTReal))
         self.layer.CreateField(ogr.FieldDefn(GCP_Z_FIELD_NAME, ogr.OFTReal))
         self.layer.CreateField(ogr.FieldDefn(Z_DIFF_FIELD_NAME, ogr.OFTReal))
 
     def add_point(self, gcp_result):
-        # (x, y, z) = input_point
         feature = ogr.Feature(self.layer.GetLayerDefn())
         geometry = ogr.Geometry(self.geometry_type)
         geometry.AddPoint_2D(gcp_result.x, gcp_result.y)
         feature.SetGeometry(geometry)
         feature.SetField(DEM_Z_FIELD_NAME, gcp_result.dem_z)
+        feature.SetField(GEOID_Z_FIELD_NAME, gcp_result.geoid_z)
         feature.SetField(GCP_Z_FIELD_NAME, gcp_result.gcp_z)
         feature.SetField(Z_DIFF_FIELD_NAME, gcp_result.z_diff)
         self.layer.CreateFeature(feature)
@@ -103,7 +114,7 @@ def parse_args(args):
     parser.add_argument('dem', type=str, help='path to DEM raster')
     parser.add_argument('gcps', type=str, help='path to GCP data')
     parser.add_argument('output', type=str, help='desired path to output (GPKG)')
-    # parser.add_argument('--geoid', type=str, help='path to geoid') # TODO
+    parser.add_argument('--geoid', type=str, help='path to geoid raster')
     parser.add_argument('--gcp-z-field', type=str, help='name of Z field in GCP features')
     parser.add_argument('--gcp-attribute-filter', type=str, help='SQL WHERE-style attribute filter for GCPs')
     parser.add_argument('--progress', action='store_true', help='show progress bar during processing')
@@ -119,12 +130,14 @@ def main():
     dem_path = Path(input_args.dem)
     gcps_path = Path(input_args.gcps)
     output_path = Path(input_args.output)
-    # if input_args.geoid is not None:
-    #     geoid_path = Path(input_args.geoid)
+    if input_args.geoid is not None:
+        geoid_path = Path(input_args.geoid)
     gcp_z_field_name = input_args.gcp_z_field
     gcp_attribute_filter = input_args.gcp_attribute_filter
 
     dem = Dem(dem_path)
+    if input_args.geoid is not None:
+        geoid = Geoid(geoid_path)
     gcps = Gcps(gcps_path, attribute_filter=gcp_attribute_filter, z_field_name=gcp_z_field_name)
     output_points = OutputPoints(output_path, 'gcp_results', gcps.get_srs())
 
@@ -137,8 +150,12 @@ def main():
     for gcp_point in gcp_iterator:
         (x, y, gcp_z) = gcp_point
         dem_z = dem.get_z(x, y, gcps.get_srs())
-        z_diff = dem_z - gcp_z
+        if input_args.geoid is None:
+            geoid_z = 0.0
+        else:
+            geoid_z = geoid.get_z(x, y, gcps.get_srs())
+        z_diff = dem_z - (gcp_z - geoid_z)
 
-        gcp_result = GcpResult(x=x, y=y, dem_z=dem_z, gcp_z=gcp_z, z_diff=z_diff)
+        gcp_result = GcpResult(x=x, y=y, dem_z=dem_z, geoid_z=geoid_z, gcp_z=gcp_z, z_diff=z_diff)
 
         output_points.add_point(gcp_result)
