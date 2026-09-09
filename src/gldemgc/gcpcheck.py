@@ -24,20 +24,9 @@ GEOID_Z_FIELD_NAME = 'geoid_z'
 GCP_Z_FIELD_NAME = 'gcp_z'
 Z_DIFF_FIELD_NAME = 'z_diff'
 
-class Dem:
+class Raster:
     def __init__(self, path: Path):
-        logging.info(f'Opening DEM dataset {path}...')
-        self.dataset = gdal.Open(path, gdal.GA_ReadOnly)
-
-    def get_z(self, x, y, srs=None):
-        band = self.dataset.GetRasterBand(1)
-        # If srs is None, will use the dataset's native srs
-        z = band.InterpolateAtGeolocation(x, y, srs, gdal.GRIORA_Bilinear)
-        return z
-
-class Geoid:
-    def __init__(self, path: Path):
-        logging.info(f'Opening geoid dataset {path}...')
+        logging.info(f'Opening raster dataset {path}...')
         self.dataset = gdal.Open(path, gdal.GA_ReadOnly)
 
     def get_z(self, x, y, srs=None):
@@ -135,9 +124,9 @@ def main():
     gcp_z_field_name = input_args.gcp_z_field
     gcp_attribute_filter = input_args.gcp_attribute_filter
 
-    dem = Dem(dem_path)
+    dem = Raster(dem_path)
     if input_args.geoid is not None:
-        geoid = Geoid(geoid_path)
+        geoid = Raster(geoid_path)
     gcps = Gcps(gcps_path, attribute_filter=gcp_attribute_filter, z_field_name=gcp_z_field_name)
     output_points = OutputPoints(output_path, 'gcp_results', gcps.get_srs())
 
