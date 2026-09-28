@@ -11,6 +11,7 @@ requires = ["hatchling"]
 
 [project.scripts]
 gcpcheck = "gldemgc.gcpcheck:main"
+gcacheck = "gldemgc.gcacheck:main"
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -27,6 +28,7 @@ numpy = ">=2.5.2,<3"
 gdal = ">=3.13.3,<4"
 libgdal-pg = ">=3.13.3,<4"
 tqdm = ">=4.70.0,<5"
+scipy = ">=1.18.1,<2"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
